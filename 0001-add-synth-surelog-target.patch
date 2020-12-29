@@ -1,0 +1,37 @@
+From df26bf5dc6622befb967da370ee209bbeeb90ad3 Mon Sep 17 00:00:00 2001
+From: Karol Gugala <kgugala@antmicro.com>
+Date: Mon, 28 Dec 2020 22:11:51 +0100
+Subject: [PATCH] add synth surelog target
+
+---
+ examples/fpga/artya7/top_artya7.core | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/examples/fpga/artya7/top_artya7.core b/examples/fpga/artya7/top_artya7.core
+index 811fb93..5030b3a 100644
+--- a/examples/fpga/artya7/top_artya7.core
++++ b/examples/fpga/artya7/top_artya7.core
+@@ -50,3 +50,20 @@ targets:
+     tools:
+       vivado:
+         part: "xc7a100tcsg324-1"  # Default to Arty A7-100
++
++  synth_surelog:
++    default_tool: vivado
++    filesets:
++      - files_rtl_artya7
++      - files_constraints
++    toplevel: top_artya7
++    parameters:
++      - SRAMInitFile
++      - PRIM_DEFAULT_IMPL=prim_pkg::ImplXilinx
++    tools:
++      vivado:
++        part: "xc7a100tcsg324-1"  # Default to Arty A7-100
++        synth: "yosys"
++        yosys_synth_options: ['-iopad', '-family xc7', '-run :check', "frontend=surelog"]
++        yosys_read_options: ['-noassert']
++        library_files: ""
+-- 
+2.29.2
+
