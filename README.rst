@@ -11,7 +11,7 @@ Prepare env
 
    export PATH=$PREFIX/bin:$PATH
 
-Bellow steps are optional - they install and enable Python virtualenv
+The steps below are optional - they install and enable Python virtualenv
 
 .. code-block:: bash
 
@@ -24,7 +24,7 @@ Clone, build and install Surelog
 
 .. note::
 
-   The steps bellow were tested with Surelog commit ca5cbc993d82e7ba1de1ea47f04684d1ef5b58d3
+   The steps below were tested with Surelog commit ca5cbc993d82e7ba1de1ea47f04684d1ef5b58d3
 
 .. code-block:: bash
 
@@ -37,7 +37,7 @@ Clone, build and install Yosys
 
 .. note::
 
-   The steps bellow were tested with Yosys commit 6ffa45e45c45f5fbc945463c8900bba0adbd04e0
+   The steps below were tested with Yosys commit 6ffa45e45c45f5fbc945463c8900bba0adbd04e0
 
 .. code-block:: bash
 
@@ -94,7 +94,7 @@ Add Surelog/UHDM target to the core file
 Build bitstream
 ---------------
 
-The command bellow will sythesize the design using Yosys/Surelog-UHDM flow, and place and route it with Vivado
+The command below will sythesize the design using Yosys/Surelog-UHDM flow, and place and route it with Vivado
 
 .. note::
 
@@ -109,4 +109,4 @@ The command bellow will sythesize the design using Yosys/Surelog-UHDM flow, and 
    --library_files="${PREFIX}/share/yosys/xilinx/cells_xtra_surelog.v" \
    --SRAMInitFile="$(realpath ibex/examples/sw/led/led.vmem)" --part xc7a35ticsg324-1L 
 
-Resulting bitstream will be in the ``build/lowrisc_ibex_top_artya7_0.1/synth_surelog-vivado/lowrisc_ibex_top_artya7_0.1.bit`` file
+The resulting bitstream will be located in the ``build/lowrisc_ibex_top_artya7_0.1/synth_surelog-vivado/lowrisc_ibex_top_artya7_0.1.bit`` file
