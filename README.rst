@@ -4,7 +4,7 @@ Prepare env
 .. code-block:: bash
 
    mkdir install
-   # Yosys and Surelog will be installed in the $PREFIX location
+   # Yosys, Yosys plugins and Surelog will be installed in the $PREFIX location
    export PREFIX=$(pwd)/install
    # This variable is required in Yosys build system to link against Surelog and UHDM
    export UHDM_INSTALL_DIR=$(pwd)/install
@@ -22,27 +22,34 @@ The steps below are optional - they install and enable Python virtualenv
 Clone, build and install Surelog
 --------------------------------
 
-.. note::
-
-   The steps below were tested with Surelog commit ca5cbc993d82e7ba1de1ea47f04684d1ef5b58d3
-
 .. code-block:: bash
 
    git clone https://github.com/alainmarcel/Surelog --recurse-submodules
-   cd Surelog && make release install
+   cd Surelog && git checkout a0ada942dd92cab5ebd6c66761b0cee7925b0de3
+   cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_POSITION_INDEPENDENT_CODE=ON -S . -B build
+   cmake --build build -j $(nproc)
+   cmake --install build
    cd -
 
 Clone, build and install Yosys
 ------------------------------
 
-.. note::
+.. code-block:: bash
 
-   The steps below were tested with Yosys commit 6ffa45e45c45f5fbc945463c8900bba0adbd04e0
+   git clone https://github.com/yosyshq/yosys
+   cd yosys && git checkout 3806b073031f1782f41762ebb6080a07e4182e95
+   patch -p1 < /path/to/uhdm.patch
+   make -j$(nproc) install
+   cd -
+
+Clone, build and install Yosys plugins
+--------------------------------------
 
 .. code-block:: bash
 
-   git clone https://github.com/antmicro/yosys -b uhdm-yosys
-   cd yosys && make -j$(nproc) install
+   git clone https://github.com/antmicro/yosys-symbiflow-plugins
+   cd yosys-symbiflow-plugins && git checkout 40780913afdba950802a24f3724c13b46e69ccdu
+   make install -j$(nproc)
    cd -
 
 Get LowRisc toolchain
@@ -57,13 +64,11 @@ Get LowRisc toolchain
 Clone ibex
 ----------
 
-.. note::
-
-   The flow was tested with Ibex commit 0199bbae665b9b142144e6688279e2ecef7d83a0
-
 .. code-block:: bash
 
    git clone https://github.com/lowrisc/ibex
+   cd ibex && git checkout 3f9022a16d7b8e82deb1272d767d9e9e766d0e0f
+   cd -
 
 Build Ibex Firmware
 -------------------
@@ -80,7 +85,7 @@ Install Ibex deps
 .. code-block:: bash
 
    pip3 install -r ibex/python-requirements.txt
-   pip3 install git+https://github.com/antmicro/edalize@surelog
+   pip3 install git+https://github.com/antmicro/edalize@uhdm_support
 
 Add Surelog/UHDM target to the core file
 ----------------------------------------
@@ -91,22 +96,17 @@ Add Surelog/UHDM target to the core file
    cd -
 
 
-Build bitstream
----------------
+Synthesize the design
+---------------------
 
-The command below will sythesize the design using Yosys/Surelog-UHDM flow, and place and route it with Vivado
-
-.. note::
-
-   The flow was tested with Vivado 2020.1 (adjust the bellow path if using different version)
+The command below will sythesize the design using Yosys/Surelog-UHDM flow.
 
 .. code-block:: bash
 
    source /opt/Xilinx/Vivado/2020.1/settings64.sh
 
-   fusesoc --cores-root=$(realpath ibex) run --build --tool vivado \
-   --target=synth_surelog lowrisc:ibex:top_artya7 \
-   --library_files="${PREFIX}/share/yosys/xilinx/cells_xtra_surelog.v" \
-   --SRAMInitFile="$(realpath ibex/examples/sw/led/led.vmem)" --part xc7a35ticsg324-1L 
+   fusesoc --cores-root=$(realpath ibex) run --build --tool yosys \
+   --target=synth lowrisc:ibex:top_artya7_surelog \
+   --SRAMInitFile="$(realpath ibex/examples/sw/led/led.vmem)"
 
-The resulting bitstream will be located in the ``build/lowrisc_ibex_top_artya7_0.1/synth_surelog-vivado/lowrisc_ibex_top_artya7_0.1.bit`` file
+The resulting edif file will be located in the ``build/lowrisc_ibex_top_artya7_surelog_0.1/synth-yosys/lowrisc_ibex_top_artya7_surelog_0.1.edif`` file
