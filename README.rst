@@ -7,7 +7,7 @@ Prepare env
    # Yosys, Yosys plugins and Surelog will be installed in the $PREFIX location
    export PREFIX=$(pwd)/install
    # This variable is required in Yosys build system to link against Surelog and UHDM
-   export UHDM_INSTALL_DIR=$(pwd)/install
+   export UHDM_INSTALL_DIR=$PREFIX
 
    export PATH=$PREFIX/bin:$PATH
 
@@ -24,7 +24,7 @@ Clone, build and install Surelog
 
 .. code-block:: bash
 
-   git clone https://github.com/alainmarcel/Surelog --recurse-submodules
+   git clone https://github.com/chipsalliance/Surelog --recurse-submodules
    cd Surelog && git checkout a0ada942dd92cab5ebd6c66761b0cee7925b0de3
    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_POSITION_INDEPENDENT_CODE=ON -S . -B build
    cmake --build build -j $(nproc)
@@ -48,7 +48,7 @@ Clone, build and install Yosys plugins
 .. code-block:: bash
 
    git clone https://github.com/antmicro/yosys-symbiflow-plugins
-   cd yosys-symbiflow-plugins && git checkout 40780913afdba950802a24f3724c13b46e69ccdu
+   cd yosys-symbiflow-plugins && git checkout 40780913afdba950802a24f3724c13b46e69ccdc
    make install -j$(nproc)
    cd -
 
@@ -72,6 +72,8 @@ Clone ibex
 
 Build Ibex Firmware
 -------------------
+
+The following requires the srec_cat (typically from srecord package) binary:
 
 .. code-block:: bash
 
