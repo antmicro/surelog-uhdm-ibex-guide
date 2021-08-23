@@ -1,3 +1,7 @@
+Requirements
+------------
+This guide requires installed ``git`` version to be at least ``2.13``.
+
 Prepare env
 -----------
 
@@ -25,7 +29,7 @@ Clone, build and install Surelog
 .. code-block:: bash
 
    git clone https://github.com/alainmarcel/Surelog --recurse-submodules
-   cd Surelog && git checkout a0ada942dd92cab5ebd6c66761b0cee7925b0de3
+   cd Surelog && git checkout a0ada942dd92cab5ebd6c66761b0cee7925b0de3 --recurse-submodules
    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_POSITION_INDEPENDENT_CODE=ON -S . -B build
    cmake --build build -j $(nproc)
    cmake --install build
@@ -48,7 +52,7 @@ Clone, build and install Yosys plugins
 .. code-block:: bash
 
    git clone https://github.com/antmicro/yosys-symbiflow-plugins
-   cd yosys-symbiflow-plugins && git checkout 40780913afdba950802a24f3724c13b46e69ccdu
+   cd yosys-symbiflow-plugins && git checkout 5924644211de4435a7fe9ceab67fe1e41eda9027
    make install -j$(nproc)
    cd -
 
@@ -90,9 +94,13 @@ Install Ibex deps
 Add Surelog/UHDM target to the core file
 ----------------------------------------
 
+Currently, Yosys doesn't support 2 port BRAM cells (current status can be tracked in the [issue](https://github.com/YosysHQ/yosys/issues/1959))
+The patches change the default Ibex configuration usind dual port RAM (``ram_2p``) to use two single ports memories (``ram_1p``).
+They also add Surelog/UHDM ``fusesoc`` targets.
+
 .. code-block:: bash
 
-   cd ibex && git am /path/to/0001-add-synth-surelog-target.patch
+   cd ibex && git am /path/to/0001-add-synth-surelog-target.patch && git am /path/to/0002-ibex-change-ram_2p-to-ram_1p.patch
    cd -
 
 
@@ -103,10 +111,23 @@ The command below will sythesize the design using Yosys/Surelog-UHDM flow.
 
 .. code-block:: bash
 
-   source /opt/Xilinx/Vivado/2020.1/settings64.sh
-
    fusesoc --cores-root=$(realpath ibex) run --build --tool yosys \
    --target=synth lowrisc:ibex:top_artya7_surelog \
    --SRAMInitFile="$(realpath ibex/examples/sw/led/led.vmem)"
 
 The resulting edif file will be located in the ``build/lowrisc_ibex_top_artya7_surelog_0.1/synth-yosys/lowrisc_ibex_top_artya7_surelog_0.1.edif`` file
+
+Build the bistream
+------------------
+
+The command below will sythesize the design using Yosys/Surelog-UHDM, place & route and generate bistream using Vivado.
+Before running the command bellow ensure Vivado accessible in your PATH.
+
+.. code-block:: bash
+
+   fusesoc --cores-root=$(realpath ibex) run --build --tool vivado \
+   --target=synth lowrisc:ibex:top_artya7_surelog \
+   --SRAMInitFile="$(realpath ibex/examples/sw/led/led.vmem)"
+
+The resulting bitstream file will be located in the ``build/lowrisc_ibex_top_artya7_surelog_0.1/synth-vivado/lowrisc_ibex_top_artya7_surelog_0.1.bit`` file
+
