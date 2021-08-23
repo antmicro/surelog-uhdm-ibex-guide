@@ -1,3 +1,7 @@
+Requirements
+------------
+This guide requires installed ``git`` version to be at least ``2.13``.
+
 Prepare env
 -----------
 
@@ -25,7 +29,7 @@ Clone, build and install Surelog
 .. code-block:: bash
 
    git clone https://github.com/alainmarcel/Surelog --recurse-submodules
-   cd Surelog && git checkout a0ada942dd92cab5ebd6c66761b0cee7925b0de3
+   cd Surelog && git checkout a0ada942dd92cab5ebd6c66761b0cee7925b0de3 --recurse-submodules
    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_POSITION_INDEPENDENT_CODE=ON -S . -B build
    cmake --build build -j $(nproc)
    cmake --install build
@@ -48,7 +52,7 @@ Clone, build and install Yosys plugins
 .. code-block:: bash
 
    git clone https://github.com/antmicro/yosys-symbiflow-plugins
-   cd yosys-symbiflow-plugins && git checkout 40780913afdba950802a24f3724c13b46e69ccdu
+   cd yosys-symbiflow-plugins && git checkout 5924644211de4435a7fe9ceab67fe1e41eda9027
    make install -j$(nproc)
    cd -
 
@@ -89,10 +93,12 @@ Install Ibex deps
 
 Add Surelog/UHDM target to the core file
 ----------------------------------------
+Currently yosys doesn't support 2 port BRAM cells (this issue can be tracked here: https://github.com/YosysHQ/yosys/issues/1959).
+This patch changes default ``ram_2p`` implementation to ``ram_1p`` as well as adapts ``fusesoc`` targets to use Surelog/UHDM.
 
 .. code-block:: bash
 
-   cd ibex && git am /path/to/0001-add-synth-surelog-target.patch
+   cd ibex && git am /path/to/0001-add-synth-surelog-target.patch && git am /path/to/0002-ibex-change-ram_2p-to-ram_1p.patch
    cd -
 
 
