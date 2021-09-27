@@ -29,7 +29,7 @@ Clone, build and install Surelog
 .. code-block:: bash
 
    git clone https://github.com/alainmarcel/Surelog --recurse-submodules
-   cd Surelog && git checkout a0ada942dd92cab5ebd6c66761b0cee7925b0de3 --recurse-submodules
+   cd Surelog && git checkout b1d3c0efc11ed2f37091b7d10b06f5a36ba6d984 --recurse-submodules
    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_POSITION_INDEPENDENT_CODE=ON -S . -B build
    cmake --build build -j $(nproc)
    cmake --install build
@@ -41,7 +41,7 @@ Clone, build and install Yosys
 .. code-block:: bash
 
    git clone https://github.com/yosyshq/yosys
-   cd yosys && git checkout 3806b073031f1782f41762ebb6080a07e4182e95
+   cd yosys && git checkout 1cac671c70bc3da9808ceb3add15686da4a5d82e
    patch -p1 < /path/to/uhdm.patch
    make -j$(nproc) install
    cd -
@@ -52,7 +52,8 @@ Clone, build and install Yosys plugins
 .. code-block:: bash
 
    git clone https://github.com/antmicro/yosys-symbiflow-plugins
-   cd yosys-symbiflow-plugins && git checkout 5924644211de4435a7fe9ceab67fe1e41eda9027
+   cd yosys-symbiflow-plugins && git checkout 4cab7813de5b295f6caabc01795c8c53d3befd69
+   git submodule update --init --recursive
    make install -j$(nproc)
    cd -
 
