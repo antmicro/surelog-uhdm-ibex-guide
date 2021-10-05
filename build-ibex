@@ -5,7 +5,6 @@ export PREFIX=$(pwd)/install
 # This variable is required in Yosys build system to link against Surelog and UHDM
 export UHDM_INSTALL_DIR=$(pwd)/install
 
-export PATH=$PREFIX/bin:$PATH
 if [[ -z $VIVADO_PATH ]]
 then
  echo "Export vivado settings path"
@@ -56,11 +55,6 @@ pip3 install git+https://github.com/antmicro/edalize@uhdm_support
 cd ibex && git am ../0001-add-synth-surelog-target.patch && git am ../0002-ibex-change-ram_2p-to-ram_1p.patch
 cd -
 
-fusesoc --cores-root=$(realpath ibex) run --build --tool yosys \
---target=synth lowrisc:ibex:top_artya7_surelog \
---SRAMInitFile="$(realpath ibex/examples/sw/led/led.vmem)"
-
-
 fusesoc --cores-root=$(realpath ibex) run --build --tool vivado \
---target=synth lowrisc:ibex:top_artya7_surelog \
+--target=synth lowrisc:ibex:top_artya7_surelog --part xc7a35ticsg324-1L \
 --SRAMInitFile="$(realpath ibex/examples/sw/led/led.vmem)"

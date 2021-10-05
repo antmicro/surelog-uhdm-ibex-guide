@@ -127,7 +127,7 @@ Before running the command bellow ensure Vivado accessible in your PATH.
 .. code-block:: bash
 
    fusesoc --cores-root=$(realpath ibex) run --build --tool vivado \
-   --target=synth lowrisc:ibex:top_artya7_surelog \
+   --target=synth lowrisc:ibex:top_artya7_surelog --part xc7a35ticsg324-1L \
    --SRAMInitFile="$(realpath ibex/examples/sw/led/led.vmem)"
 
 The resulting bitstream file will be located in the ``build/lowrisc_ibex_top_artya7_surelog_0.1/synth-vivado/lowrisc_ibex_top_artya7_surelog_0.1.bit`` file
