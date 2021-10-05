@@ -72,7 +72,7 @@ Clone ibex
 .. code-block:: bash
 
    git clone https://github.com/lowrisc/ibex
-   cd ibex && git checkout 3f9022a16d7b8e82deb1272d767d9e9e766d0e0f
+   cd ibex && git checkout ac8934459b028220ce9fd20683bb018244b59756
    cd -
 
 Build Ibex Firmware
