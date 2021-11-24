@@ -29,7 +29,7 @@ Clone, build and install Surelog
 .. code-block:: bash
 
    git clone https://github.com/alainmarcel/Surelog --recurse-submodules
-   cd Surelog && git checkout b1d3c0efc11ed2f37091b7d10b06f5a36ba6d984 --recurse-submodules
+   cd Surelog && git checkout 05a8c09945dc0e377f366e5b0520ec878cfae8a3 --recurse-submodules
    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_POSITION_INDEPENDENT_CODE=ON -S . -B build
    cmake --build build -j $(nproc)
    cmake --install build
@@ -41,8 +41,7 @@ Clone, build and install Yosys
 .. code-block:: bash
 
    git clone https://github.com/yosyshq/yosys
-   cd yosys && git checkout 1cac671c70bc3da9808ceb3add15686da4a5d82e
-   patch -p1 < /path/to/uhdm.patch
+   cd yosys && git checkout 113c9438419e00c7da2ce76d040a60273ad3ecb2
    make -j$(nproc) install
    cd -
 
@@ -51,10 +50,10 @@ Clone, build and install Yosys plugins
 
 .. code-block:: bash
 
-   git clone https://github.com/antmicro/yosys-symbiflow-plugins
-   cd yosys-symbiflow-plugins && git checkout 4cab7813de5b295f6caabc01795c8c53d3befd69
+   git clone https://github.com/SymbiFlow/yosys-symbiflow-plugins
+   cd yosys-symbiflow-plugins && git checkout 6c4141c8e4f35920f6a6e6d11dcf3cca1bebc37c
    git submodule update --init --recursive
-   make install -j$(nproc)
+   make BUILD_UPSTREAM=1 install -j$(nproc)
    cd -
 
 Get LowRisc toolchain
@@ -72,7 +71,7 @@ Clone ibex
 .. code-block:: bash
 
    git clone https://github.com/lowrisc/ibex
-   cd ibex && git checkout ac8934459b028220ce9fd20683bb018244b59756
+   cd ibex && git checkout 1bbe27effeda63f34c4f5c06cc88da58f9c5a404
    cd -
 
 Build Ibex Firmware
@@ -96,7 +95,7 @@ Add Surelog/UHDM target to the core file
 ----------------------------------------
 
 Currently, Yosys doesn't support 2 port BRAM cells (current status can be tracked in the [issue](https://github.com/YosysHQ/yosys/issues/1959))
-The patches change the default Ibex configuration usind dual port RAM (``ram_2p``) to use two single ports memories (``ram_1p``).
+The patches change the default Ibex configuration using dual port RAM (``ram_2p``) to use two single ports memories (``ram_1p``).
 They also add Surelog/UHDM ``fusesoc`` targets.
 
 .. code-block:: bash
@@ -132,3 +131,15 @@ Before running the command bellow ensure Vivado accessible in your PATH.
 
 The resulting bitstream file will be located in the ``build/lowrisc_ibex_top_artya7_surelog_0.1/synth-vivado/lowrisc_ibex_top_artya7_surelog_0.1.bit`` file
 
+Enable additional features
+--------------------------
+
+Some uhdm-plugin features require a modified version of Yosys. To use them, apply ``uhdm.patch`` to the Yosys repository and rebuild ``yosys-symbiflow-plugins`` without the ``BUILD_UPSTREAM`` flag.
+
+.. code-block:: bash
+
+   cd yosys && git apply /path/to/uhdm.patch
+   make -j$(nproc) install
+   cd -
+   cd yosys-symbiflow-plugins && make clean && make install -j$(nproc)
+   cd -
