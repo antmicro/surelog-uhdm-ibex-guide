@@ -71,7 +71,7 @@ Clone ibex
 .. code-block:: bash
 
    git clone https://github.com/lowrisc/ibex
-   cd ibex && git checkout a3f1c485badada0a39eaccc340b851cfc4c29cd9
+   cd ibex && git checkout 1bbe27effeda63f34c4f5c06cc88da58f9c5a404
    cd -
 
 Build Ibex Firmware
@@ -94,7 +94,7 @@ Install Ibex deps
 Add Surelog/UHDM target to the core file
 ----------------------------------------
 
-Currently, Yosys doesn't support 2 port BRAM cells (current status can be tracked in the [issue](https://github.com/YosysHQ/yosys/issues/1959))
+Currently, Yosys doesn't support 2 port BRAM cells (current status can be tracked in the `issue <https://github.com/YosysHQ/yosys/issues/1959>`_)
 The patches change the default Ibex configuration using dual port RAM (``ram_2p``) to use two single ports memories (``ram_1p``).
 They also add Surelog/UHDM ``fusesoc`` targets.
 
@@ -134,12 +134,12 @@ The resulting bitstream file will be located in the ``build/lowrisc_ibex_top_art
 Enable additional features
 --------------------------
 
-Some uhdm-plugin features require a modified version of Yosys. To use them, apply ``uhdm.patch`` to the Yosys repository and rebuild ``yosys-symbiflow-plugins`` without the ``BUILD_UPSTREAM`` flag.
+Some uhdm-plugin features require a modified version of Yosys. To use them, apply ``uhdm.patch`` to the Yosys repository and rebuild ``yosys-symbiflow-plugins``.
 
 .. code-block:: bash
 
    cd yosys && git apply /path/to/uhdm.patch
    make -j$(nproc) install
    cd -
-   cd yosys-symbiflow-plugins && make clean && make install -j$(nproc)
+   cd yosys-symbiflow-plugins && make clean && make BUILD_UPSTREAM=1 install -j$(nproc)
    cd -
