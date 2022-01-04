@@ -29,7 +29,7 @@ Clone, build and install Surelog
 .. code-block:: bash
 
    git clone https://github.com/alainmarcel/Surelog --recurse-submodules
-   cd Surelog && git checkout 05a8c09945dc0e377f366e5b0520ec878cfae8a3 --recurse-submodules
+   cd Surelog && git checkout a3f1c485badada0a39eaccc340b851cfc4c29cd9 --recurse-submodules
    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_POSITION_INDEPENDENT_CODE=ON -S . -B build
    cmake --build build -j $(nproc)
    cmake --install build
@@ -41,7 +41,7 @@ Clone, build and install Yosys
 .. code-block:: bash
 
    git clone https://github.com/yosyshq/yosys
-   cd yosys && git checkout 113c9438419e00c7da2ce76d040a60273ad3ecb2
+   cd yosys && git checkout cfe940a98b08f1a5d08fb44427db155ba1f18b62
    make -j$(nproc) install
    cd -
 
@@ -51,7 +51,7 @@ Clone, build and install Yosys plugins
 .. code-block:: bash
 
    git clone https://github.com/SymbiFlow/yosys-symbiflow-plugins
-   cd yosys-symbiflow-plugins && git checkout 6c4141c8e4f35920f6a6e6d11dcf3cca1bebc37c
+   cd yosys-symbiflow-plugins && git checkout 91d7db03ddbee23f9ff91f395de1692a37e51362
    git submodule update --init --recursive
    make BUILD_UPSTREAM=1 install -j$(nproc)
    cd -
@@ -94,7 +94,7 @@ Install Ibex deps
 Add Surelog/UHDM target to the core file
 ----------------------------------------
 
-Currently, Yosys doesn't support 2 port BRAM cells (current status can be tracked in the [issue](https://github.com/YosysHQ/yosys/issues/1959))
+Currently, Yosys doesn't support 2 port BRAM cells (current status can be tracked in the `issue <https://github.com/YosysHQ/yosys/issues/1959>`_)
 The patches change the default Ibex configuration using dual port RAM (``ram_2p``) to use two single ports memories (``ram_1p``).
 They also add Surelog/UHDM ``fusesoc`` targets.
 
@@ -117,8 +117,8 @@ The command below will sythesize the design using Yosys/Surelog-UHDM flow.
 
 The resulting edif file will be located in the ``build/lowrisc_ibex_top_artya7_surelog_0.1/synth-yosys/lowrisc_ibex_top_artya7_surelog_0.1.edif`` file
 
-Build the bistream
-------------------
+Build the bitstream
+-------------------
 
 The command below will sythesize the design using Yosys/Surelog-UHDM, place & route and generate bistream using Vivado.
 Before running the command bellow ensure Vivado accessible in your PATH.
@@ -134,12 +134,12 @@ The resulting bitstream file will be located in the ``build/lowrisc_ibex_top_art
 Enable additional features
 --------------------------
 
-Some uhdm-plugin features require a modified version of Yosys. To use them, apply ``uhdm.patch`` to the Yosys repository and rebuild ``yosys-symbiflow-plugins`` without the ``BUILD_UPSTREAM`` flag.
+Some uhdm-plugin features require a modified version of Yosys. To use them, apply ``uhdm.patch`` to the Yosys repository and rebuild ``yosys-symbiflow-plugins``.
 
 .. code-block:: bash
 
    cd yosys && git apply /path/to/uhdm.patch
    make -j$(nproc) install
    cd -
-   cd yosys-symbiflow-plugins && make clean && make install -j$(nproc)
+   cd yosys-symbiflow-plugins && make clean && make BUILD_UPSTREAM=1 install -j$(nproc)
    cd -
