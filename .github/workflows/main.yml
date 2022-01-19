@@ -1,0 +1,23 @@
+name: main
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: sudo apt-get install build-essential clang bison flex libreadline-dev gawk tcl-dev libffi-dev git graphviz xdot pkg-config python3 libboost-system-dev libboost-python-dev libboost-filesystem-dev zlib1g-dev srecord
+    - name: Install tuttest
+      run: pip install --user git+https://github.com/antmicro/tuttest
+    - name: Set git user for git-am
+      run: git config --global user.name "GHA runner"
+    - name: Build Ibex using vanilla Yosys
+      run: .github/test.py --first --build
+    - name: Build Ibex using patched Yosys
+      run: .github/test.py --patch --build
