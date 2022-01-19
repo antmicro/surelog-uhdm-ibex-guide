@@ -18,6 +18,6 @@ jobs:
     - name: Set git user for git-am
       run: git config --global user.name "GHA runner"
     - name: Build Ibex using vanilla Yosys
-      run: .github/test.py --first --build
+      run: .github/test.py --first-run --build
     - name: Build Ibex using patched Yosys
       run: .github/test.py --patch --build

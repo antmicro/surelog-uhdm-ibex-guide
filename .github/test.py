@@ -7,7 +7,7 @@ import sys
 import tuttest
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--first', action='store_true')
+parser.add_argument('--first-run', action='store_true')
 parser.add_argument('--patch', action='store_true')
 parser.add_argument('--build', action='store_true')
 args = parser.parse_args()
@@ -29,7 +29,7 @@ yosys_patch = snippets.pop('yosys-patch').text
 ibex_build = snippets.pop('ibex-build').text
 vivado_ibex_build = snippets.pop('vivado-ibex-build').text
 
-if args.first:
+if args.first_run:
     # Do the entire prep until patching Yosys/building Ibex
     cmd = '\n\n'.join(map(lambda s: s.text, snippets.values()))
 else:
@@ -40,7 +40,7 @@ if args.patch:
     cmd += '\n\n' + yosys_patch
 
 if args.build:
-    if not args.first:  # Set up the lowRISC toolchain
+    if not args.first_run:  # Set up the lowRISC toolchain
         cmd += '\n\n' + virtualenv + '\n\n' + lowrisc_toolchain
     cmd += '\n\n' + ibex_build
     if 'CI' not in os.environ or not os.environ['CI']:
