@@ -6,8 +6,9 @@ Prepare env
 -----------
 
 .. code-block:: bash
+   :name: install-paths
 
-   mkdir install
+   mkdir -p install
    # Yosys, Yosys plugins and Surelog will be installed in the $PREFIX location
    export PREFIX=$(pwd)/install
    # This variable is required in Yosys build system to link against Surelog and UHDM
@@ -18,6 +19,7 @@ Prepare env
 The steps below are optional - they install and enable Python virtualenv
 
 .. code-block:: bash
+   :name: virtualenv
 
    pip3 install virtualenv
    virtualenv env
@@ -60,9 +62,10 @@ Get LowRisc toolchain
 ---------------------
 
 .. code-block:: bash
+   :name: lowrisc-toolchain
 
-   wget https://raw.githubusercontent.com/lowRISC/opentitan/master/util/get-toolchain.py
-   python3 get-toolchain.py -i lowrisc-toolchain
+   wget https://raw.githubusercontent.com/lowRISC/opentitan/master/util/get-toolchain.py -O get-toolchain.py
+   python3 get-toolchain.py --update -i lowrisc-toolchain
    export PATH=$(realpath lowrisc-toolchain/bin):$PATH
 
 Clone ibex
@@ -98,9 +101,13 @@ Currently, Yosys doesn't support 2 port BRAM cells (current status can be tracke
 The patches change the default Ibex configuration using dual port RAM (``ram_2p``) to use two single ports memories (``ram_1p``).
 They also add Surelog/UHDM ``fusesoc`` targets.
 
+Specify or replace ``$PATCH_DIR`` with the path to where this repository was checked out.
+
 .. code-block:: bash
 
-   cd ibex && git am /path/to/0001-add-synth-surelog-target.patch && git am /path/to/0002-ibex-change-ram_2p-to-ram_1p.patch
+   cd ibex \
+   && git am $PATCH_DIR/0001-add-synth-surelog-target.patch \
+   && git am $PATCH_DIR/0002-ibex-change-ram_2p-to-ram_1p.patch
    cd -
 
 
@@ -110,6 +117,7 @@ Synthesize the design
 The command below will sythesize the design using Yosys/Surelog-UHDM flow.
 
 .. code-block:: bash
+   :name: ibex-build
 
    fusesoc --cores-root=$(realpath ibex) run --build --tool yosys \
    --target=synth lowrisc:ibex:top_artya7_surelog \
@@ -124,6 +132,7 @@ The command below will sythesize the design using Yosys/Surelog-UHDM, place & ro
 Before running the command bellow ensure Vivado accessible in your PATH.
 
 .. code-block:: bash
+   :name: vivado-ibex-build
 
    fusesoc --cores-root=$(realpath ibex) run --build --tool vivado \
    --target=synth lowrisc:ibex:top_artya7_surelog --part xc7a35ticsg324-1L \
@@ -134,11 +143,14 @@ The resulting bitstream file will be located in the ``build/lowrisc_ibex_top_art
 Enable additional features
 --------------------------
 
-Some uhdm-plugin features require a modified version of Yosys. To use them, apply ``uhdm.patch`` to the Yosys repository and rebuild ``yosys-symbiflow-plugins``.
+Some uhdm-plugin features require a modified version of Yosys. To use them, apply ``yosys.patch`` to the Yosys repository and rebuild ``yosys-symbiflow-plugins``.
+
+Specify or replace ``$PATCH_DIR`` with the path to where this repository was checked out.
 
 .. code-block:: bash
+   :name: yosys-patch
 
-   cd yosys && git apply /path/to/uhdm.patch
+   cd yosys && git apply $PATCH_DIR/yosys.patch
    make -j$(nproc) install
    cd -
    cd yosys-symbiflow-plugins && make clean && make BUILD_UPSTREAM=1 install -j$(nproc)
