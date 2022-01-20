@@ -31,7 +31,8 @@ Clone, build and install Surelog
 .. code-block:: bash
 
    git clone https://github.com/alainmarcel/Surelog --recurse-submodules
-   cd Surelog && git checkout a3f1c485badada0a39eaccc340b851cfc4c29cd9 --recurse-submodules
+   cd Surelog && git checkout 06e08f98b6bdbf4b319ce6df0a65cc171168b7a4 --recurse-submodules
+   pip3 install orderedmultidict
    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_POSITION_INDEPENDENT_CODE=ON -S . -B build
    cmake --build build -j $(nproc)
    cmake --install build
@@ -43,7 +44,7 @@ Clone, build and install Yosys
 .. code-block:: bash
 
    git clone https://github.com/yosyshq/yosys
-   cd yosys && git checkout cfe940a98b08f1a5d08fb44427db155ba1f18b62
+   cd yosys && git checkout 61324cf55fc5c5237161d4cee157c121fe115fa1 
    make -j$(nproc) install
    cd -
 
@@ -53,9 +54,9 @@ Clone, build and install Yosys plugins
 .. code-block:: bash
 
    git clone https://github.com/SymbiFlow/yosys-symbiflow-plugins
-   cd yosys-symbiflow-plugins && git checkout 91d7db03ddbee23f9ff91f395de1692a37e51362
+   cd yosys-symbiflow-plugins && git checkout 6ff7742749459e09e022976f65cd027bfe3d2630
    git submodule update --init --recursive
-   make BUILD_UPSTREAM=1 install -j$(nproc)
+   make install -j$(nproc)
    cd -
 
 Get LowRisc toolchain
@@ -153,5 +154,5 @@ Specify or replace ``$PATCH_DIR`` with the path to where this repository was che
    cd yosys && git apply $PATCH_DIR/yosys.patch
    make -j$(nproc) install
    cd -
-   cd yosys-symbiflow-plugins && make clean && make BUILD_UPSTREAM=1 install -j$(nproc)
+   cd yosys-symbiflow-plugins && make clean && make install -j$(nproc)
    cd -

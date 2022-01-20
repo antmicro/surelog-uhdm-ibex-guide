@@ -1,27 +1,15 @@
-diff --git a/frontends/ast/genrtlil.cc b/frontends/ast/genrtlil.cc
-index 1fe74bb72..63a64736f 100644
---- a/frontends/ast/genrtlil.cc
-+++ b/frontends/ast/genrtlil.cc
-@@ -849,6 +849,8 @@ void AstNode::detectSignWidthWorker(int &width_hint, bool &sign_hint, bool *foun
- 				while (id_ast->simplify(true, false, false, 1, -1, false, true)) { }
- 			if (id_ast->children[0]->type == AST_CONSTANT)
- 				this_width = id_ast->children[0]->bits.size();
-+			else if (id_ast->children.size() == 1 && id_ast->children[0]->type == AST_IDENTIFIER && id_ast->children[0]->id2ast)
-+				this_width = id_ast->children[0]->id2ast->range_left - id_ast->children[0]->id2ast->range_right + 1;
- 			else
- 				log_file_error(filename, location.first_line, "Failed to detect width for parameter %s!\n", str.c_str());
- 			if (children.size() != 0)
-@@ -877,7 +879,7 @@ void AstNode::detectSignWidthWorker(int &width_hint, bool &sign_hint, bool *foun
- 			this_width = id_ast->children[0]->range_left - id_ast->children[0]->range_right + 1;
- 			if (children.size() > 1)
- 				range = children[1];
--		} else if (id_ast->type == AST_STRUCT_ITEM) {
-+		} else if (id_ast->type == AST_STRUCT_ITEM || id_ast->type == AST_STRUCT) {
- 			AstNode *tmp_range = make_struct_member_range(this, id_ast);
- 			this_width = tmp_range->range_left - tmp_range->range_right + 1;
- 			delete tmp_range;
+From 543231e797c2ac99df33ce63669cfd28fe370a51 Mon Sep 17 00:00:00 2001
+From: Kamil Rakoczy <krakoczy@antmicro.com>
+Date: Wed, 22 Sep 2021 12:15:49 +0200
+Subject: [PATCH 1/4] Add support for typedef with range in struct
+
+Signed-off-by: Kamil Rakoczy <krakoczy@antmicro.com>
+---
+ frontends/ast/simplify.cc | 26 +++++++++++++++++++++++++-
+ 1 file changed, 25 insertions(+), 1 deletion(-)
+
 diff --git a/frontends/ast/simplify.cc b/frontends/ast/simplify.cc
-index cb47e641a..f03a88278 100644
+index 18b1e1e11..f25531e96 100644
 --- a/frontends/ast/simplify.cc
 +++ b/frontends/ast/simplify.cc
 @@ -300,6 +300,21 @@ static int size_packed_struct(AstNode *snode, int base_offset)
@@ -62,7 +50,56 @@ index cb47e641a..f03a88278 100644
  		}
  		else {
  			log_assert(node->type == AST_STRUCT_ITEM);
-@@ -493,14 +517,12 @@ static void add_members_to_scope(AstNode *snode, std::string name)
+@@ -509,7 +533,7 @@ static int get_max_offset(AstNode *node)
+ 	// get the width from the MS member in the struct
+ 	// as members are laid out from left to right in the packed wire
+ 	log_assert(node->type==AST_STRUCT || node->type==AST_UNION);
+-	while (node->type != AST_STRUCT_ITEM) {
++	while (node->range_left < 0) {
+ 		node = node->children[0];
+ 	}
+ 	return node->range_left;
+-- 
+2.33.1
+
+From d2e26aceb4a6923a340fca85bfaba5a18a88fd9d Mon Sep 17 00:00:00 2001
+From: Kamil Rakoczy <krakoczy@antmicro.com>
+Date: Mon, 22 Nov 2021 15:02:27 +0100
+Subject: [PATCH 2/4] Add support for accessing whole struct
+
+Signed-off-by: Kamil Rakoczy <krakoczy@antmicro.com>
+---
+ frontends/ast/genrtlil.cc |  4 +++-
+ frontends/ast/simplify.cc | 15 ++++++++++-----
+ 2 files changed, 13 insertions(+), 6 deletions(-)
+
+diff --git a/frontends/ast/genrtlil.cc b/frontends/ast/genrtlil.cc
+index 4c25287ad..53bf43cba 100644
+--- a/frontends/ast/genrtlil.cc
++++ b/frontends/ast/genrtlil.cc
+@@ -849,6 +849,8 @@ void AstNode::detectSignWidthWorker(int &width_hint, bool &sign_hint, bool *foun
+ 				while (id_ast->simplify(true, false, false, 1, -1, false, true)) { }
+ 			if (id_ast->children[0]->type == AST_CONSTANT)
+ 				this_width = id_ast->children[0]->bits.size();
++			else if (id_ast->children.size() == 1 && id_ast->children[0]->type == AST_IDENTIFIER && id_ast->children[0]->id2ast)
++				this_width = id_ast->children[0]->id2ast->range_left - id_ast->children[0]->id2ast->range_right + 1;
+ 			else
+ 				log_file_error(filename, location.first_line, "Failed to detect width for parameter %s!\n", str.c_str());
+ 			if (children.size() != 0)
+@@ -877,7 +879,7 @@ void AstNode::detectSignWidthWorker(int &width_hint, bool &sign_hint, bool *foun
+ 			this_width = id_ast->children[0]->range_left - id_ast->children[0]->range_right + 1;
+ 			if (children.size() > 1)
+ 				range = children[1];
+-		} else if (id_ast->type == AST_STRUCT_ITEM) {
++		} else if (id_ast->type == AST_STRUCT_ITEM || id_ast->type == AST_STRUCT) {
+ 			AstNode *tmp_range = make_struct_member_range(this, id_ast);
+ 			this_width = tmp_range->range_left - tmp_range->range_right + 1;
+ 			delete tmp_range;
+diff --git a/frontends/ast/simplify.cc b/frontends/ast/simplify.cc
+index f25531e96..2cef569a8 100644
+--- a/frontends/ast/simplify.cc
++++ b/frontends/ast/simplify.cc
+@@ -517,14 +517,12 @@ static void add_members_to_scope(AstNode *snode, std::string name)
  	// in case later referenced in assignments
  	log_assert(snode->type==AST_STRUCT || snode->type==AST_UNION);
  	for (auto *node : snode->children) {
@@ -79,134 +116,7 @@ index cb47e641a..f03a88278 100644
  	}
  }
  
-@@ -509,7 +531,7 @@ static int get_max_offset(AstNode *node)
- 	// get the width from the MS member in the struct
- 	// as members are laid out from left to right in the packed wire
- 	log_assert(node->type==AST_STRUCT || node->type==AST_UNION);
--	while (node->type != AST_STRUCT_ITEM) {
-+	while (node->range_left < 0) {
- 		node = node->children[0];
- 	}
- 	return node->range_left;
-@@ -673,6 +695,108 @@ void add_wire_for_ref(const RTLIL::Wire *ref, const std::string &str)
- 	current_scope[str] = wire;
- }
- 
-+// try to remove and delete an attribute, and return whether it existed
-+static bool consume_attribute(AstNode* node, const std::string& attr)
-+{
-+	auto it = node->attributes.find(attr);
-+	if (it == node->attributes.end())
-+		return false;
-+	delete it->second;
-+	node->attributes.erase(it);
-+	return true;
-+}
-+
-+// After unrolling a procedural loop, we generate a procedural assignment for
-+// the ending value of the loop variable. However, if the loop variable is local
-+// and unused, we'd like to remove this unneeded assignment, especially to avoid
-+// an errant inferred latch in an `always_comb` block. To accomplish this, we
-+// first mark loop variables and their corresponding "lvers" with this attribute
-+// during unrolling. Then, after the module has been processed, we traverse the
-+// AST, and, if no other identifier besides the one in the lver references the
-+// loop variable, the lver is removed.
-+static const std::string lver_attr = "\\LoopVariableEndingAssignment";
-+
-+// This is the core AST traversal for the above transformation. See `lver_attr`
-+// and `remove_unneeded_lvers`.
-+static void lver_traversal(std::map<std::string, AstNode*>& pending, AstNode* node) {
-+	const std::string* should_mark_asgn = nullptr;
-+
-+	// loop var ending assigns replace the wire corresponding in the map if
-+	// it hasn't already been invalidated
-+	if (node->type == AST_ASSIGN_EQ && consume_attribute(node, lver_attr)) {
-+		const std::string& var_id = node->children.at(0)->str;
-+		// the var will be un-marked when the identifier in this assign is
-+		// visited; it is safe to assume that is the only use of *this* var
-+		// in the assign, but perhaps others might be seen, e.g., in a range
-+		if (pending.at(var_id))
-+			should_mark_asgn = &var_id;
-+	}
-+
-+	// any usage of a pending identifier invalidates the removal
-+	else if (node->type == AST_IDENTIFIER) {
-+		auto it = pending.find(node->str);
-+		if (it != pending.end())
-+			it->second = nullptr;
-+	}
-+
-+	for (AstNode* child : node->children)
-+		lver_traversal(pending, child);
-+
-+	// if this is an ending assign pointer which hasn't been invalidated,
-+	// update the mark to point to this node so it can be removed at the end
-+	if (should_mark_asgn)
-+		pending[*should_mark_asgn] = node;
-+}
-+
-+// This is used after simplify()ing modules to remove assignments to loop vars
-+// which aren't necessary because the loop var itself is never used.
-+static void remove_unneeded_lvers(AstNode* root)
-+{
-+	std::map<std::string, AstNode*> pending;
-+
-+	// find any wires which have been marked as procedural loop vars
-+	for (AstNode* node : root->children)
-+		if (node->type == AST_WIRE && consume_attribute(node, lver_attr))
-+			pending[node->str] = node;
-+	if (!pending.size())
-+		return;
-+
-+	// the "pending" elements in the map are replaced by the corresponding
-+	// procedural assignment so long as no identifiers besides the one it
-+	// contains references the corresponding loop variable
-+	lver_traversal(pending, root);
-+
-+	// remove the identified unneeded assignments
-+	for (auto& elem : pending) {
-+		AstNode* node = elem.second;
-+		// if the variable is only used in the lver
-+		if (node && node->type == AST_ASSIGN_EQ) {
-+			// remove the asgn by making it a silly stub node in place
-+			node->delete_children();
-+			node->type = AST_BLOCK;
-+		}
-+	}
-+}
-+
-+// Used during loop unrolling to appropriately mark relevant nodes for the above
-+// function remove_unneeded_lvers().
-+static void mark_lver(AstNode* asgn)
-+{
-+	log_assert(asgn->type == AST_ASSIGN_EQ);
-+	AstNode* wire = asgn->children.at(0)->id2ast;
-+	log_assert(wire->type == AST_WIRE);
-+
-+	// don't try to handle reused loop variables
-+	if (wire->attributes.count(lver_attr))
-+		return;
-+
-+	if (wire->str.find("$fordecl_block") != std::string::npos ||
-+			wire->str.find("$unnamed_block") != std::string::npos) {
-+		asgn->attributes[lver_attr] = AstNode::mkconst_int(1, false);
-+		wire->attributes[lver_attr] = AstNode::mkconst_int(1, false);
-+	}
-+}
-+
- // convert the AST into a simpler AST that has all parameters substituted by their
- // values, unrolled for-loops, expanded generate blocks, etc. when this function
- // is done with an AST it can be converted into RTLIL using genRTLIL().
-@@ -980,6 +1104,8 @@ bool AstNode::simplify(bool const_fold, bool at_zero, bool in_lvalue, int stage,
- 				}
- 			}
- 		}
-+
-+		remove_unneeded_lvers(this);
- 	}
- 
- 	// create name resolution entries for all objects with names
-@@ -1224,6 +1350,13 @@ bool AstNode::simplify(bool const_fold, bool at_zero, bool in_lvalue, int stage,
+@@ -1365,6 +1363,13 @@ bool AstNode::simplify(bool const_fold, bool at_zero, bool in_lvalue, int stage,
  
  	case AST_PARAMETER:
  	case AST_LOCALPARAM:
@@ -220,7 +130,7 @@ index cb47e641a..f03a88278 100644
  		while (!children[0]->basic_prep && children[0]->simplify(false, false, false, stage, -1, false, true) == true)
  			did_something = true;
  		children[0]->detectSignWidth(width_hint, sign_hint);
-@@ -1901,7 +2034,7 @@ bool AstNode::simplify(bool const_fold, bool at_zero, bool in_lvalue, int stage,
+@@ -2042,7 +2047,7 @@ bool AstNode::simplify(bool const_fold, bool at_zero, bool in_lvalue, int stage,
  		if (name_has_dot(str, sname)) {
  			if (current_scope.count(str) > 0) {
  				auto item_node = current_scope[str];
@@ -229,147 +139,87 @@ index cb47e641a..f03a88278 100644
  					// structure member, rewrite this node to reference the packed struct wire
  					auto range = make_struct_member_range(this, item_node);
  					newNode = new AstNode(AST_IDENTIFIER, range);
-@@ -2200,6 +2333,7 @@ bool AstNode::simplify(bool const_fold, bool at_zero, bool in_lvalue, int stage,
- 			delete buf->children[1];
- 			buf->children[1] = varbuf->children[0]->clone();
- 			current_block->children.insert(current_block->children.begin() + current_block_idx++, buf);
-+			mark_lver(buf);
- 		}
- 
- 		current_scope[varbuf->str] = backup_scope_varbuf;
-diff --git a/tests/simple/loop_var_keep.sv b/tests/simple/loop_var_keep.sv
+-- 
+2.33.1
+
+From 071a837160255004e8e215203e64a8a8663ec8c1 Mon Sep 17 00:00:00 2001
+From: Kamil Rakoczy <krakoczy@antmicro.com>
+Date: Mon, 10 Jan 2022 13:18:31 +0100
+Subject: [PATCH 3/4] Add always_comb_nolatch_5 test
+
+Signed-off-by: Kamil Rakoczy <krakoczy@antmicro.com>
+---
+ tests/verilog/always_comb_nolatch_5.ys | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+ create mode 100644 tests/verilog/always_comb_nolatch_5.ys
+
+diff --git a/tests/verilog/always_comb_nolatch_5.ys b/tests/verilog/always_comb_nolatch_5.ys
 new file mode 100644
-index 000000000..fb73683a7
+index 000000000..d9b3b4eae
 --- /dev/null
-+++ b/tests/simple/loop_var_keep.sv
-@@ -0,0 +1,14 @@
-+module top (
-+    input logic inp,
-+    output logic [4:0] out
-+);
-+    always @* begin
-+        out = 0;
-+        if (inp) begin
-+            int i;
-+            for (i = 0; i < 5; i++)
-+                out[i] = 1'b1;
-+            out[i - 1] = 1'b0;
-+        end
-+    end
-+endmodule
-diff --git a/tests/simple/loop_var_no_latch_1.sv b/tests/simple/loop_var_no_latch_1.sv
-new file mode 100644
-index 000000000..1b442d3ce
---- /dev/null
-+++ b/tests/simple/loop_var_no_latch_1.sv
-@@ -0,0 +1,13 @@
-+module top (
-+    input logic inp,
-+    output logic [4:0] out
-+);
-+    always_comb begin
-+        out = 0;
-+        if (inp) begin
-+            int i;
-+            for (i = 0; i < 5; i++)
-+                out[i] = 1'b1;
-+        end
-+    end
-+endmodule
-diff --git a/tests/simple/loop_var_no_latch_2.sv b/tests/simple/loop_var_no_latch_2.sv
-new file mode 100644
-index 000000000..5d26bbd19
---- /dev/null
-+++ b/tests/simple/loop_var_no_latch_2.sv
-@@ -0,0 +1,12 @@
-+module top (
-+    input logic inp,
-+    output logic [4:0] out
-+);
-+    always_comb begin
-+        out = 0;
-+        if (inp) begin
-+            for (int i = 0; i < 5; i++)
-+                out[i] = 1'b1;
-+        end
-+    end
-+endmodule
-diff --git a/tests/various/param_struct.ys b/tests/various/param_struct.ys
-index 6d7a7c6ad..b8de67968 100644
---- a/tests/various/param_struct.ys
-+++ b/tests/various/param_struct.ys
-@@ -41,8 +41,7 @@ always_comb begin
-   assert(j == 1'b1);
-   assert(k == 1'b0);
-   assert(l == 3'b111);
--// TODO: support access to whole sub-structs and unions
--//  assert(m == 2'b10);
-+  assert(m == 2'b10);
-   assert(u == 5'b11001);
- end
- endmodule
-diff --git a/tests/various/struct_access.ys b/tests/various/struct_access.ys
-new file mode 100644
-index 000000000..d89775443
---- /dev/null
-+++ b/tests/various/struct_access.ys
-@@ -0,0 +1,43 @@
-+read_verilog -sv -dump_ast1 -dump_ast2 << EOF
-+module dut();
-+typedef struct packed {
-+  logic a;
-+  logic b;
-+} struct_t;
-+
-+typedef struct packed {
-+  struct_t c;
-+} sub_struct_t;
-+
-+typedef struct packed {
-+  sub_struct_t d;
-+  sub_struct_t e;
-+} sub_sub_struct_t;
-+
-+parameter sub_sub_struct_t P = 4'b1100;
-+
-+localparam sub_struct_t f = P.d;
-+localparam sub_struct_t g = P.e;
-+localparam struct_t h = f.c;
-+localparam logic i = P.d.c.a;
-+localparam logic j = P.d.c.b;
-+localparam x = P.e;
-+localparam y = x.c;
-+localparam z = y.a;
-+
++++ b/tests/verilog/always_comb_nolatch_5.ys
+@@ -0,0 +1,22 @@
++read_verilog -sv <<EOF
++module top();
++logic z;
++logic [3:0] a;
++logic [3:0] b;
++function automatic logic [3:0] transpose(logic [3:0] in);
++  logic [3:0] transpose;
++  transpose = '0;
++  for (int j=0; j<4; j++) begin
++    transpose[j] = in[3 - j];
++  end 
++endfunction 
 +always_comb begin
-+  assert(P == 4'b1100);
-+  assert(f == 2'b11);
-+  assert(g == 2'b00);
-+  assert(h == 2'b11);
-+  assert(i == 1'b1);
-+  assert(j == 1'b1);
-+  assert(x == 2'b00);
-+  assert(y == 2'b00);
-+  assert(z == 1'b0);
++  unique case (z)
++    1'b0: a = '0;
++    1'b1: a = transpose(b);
++    default: a = '0;
++  endcase
 +end
 +endmodule
 +EOF
-+hierarchy; proc; opt
-+sat -verify -seq 1 -tempinduct -prove-asserts -show-all
-+
-diff --git a/tests/verilog/struct_access.sv b/tests/verilog/struct_access.sv
-index f13b8dd51..bc91e3f01 100644
---- a/tests/verilog/struct_access.sv
-+++ b/tests/verilog/struct_access.sv
-@@ -77,9 +77,8 @@ module top;
-         `CHECK(s.y.a, 1, 0)
-         `CHECK(s.y.b, 1, 1)
++proc
+-- 
+2.33.1
+
+From b856bb9a3cc8887677dd74c0c837f09cefe76f5e Mon Sep 17 00:00:00 2001
+From: Kamil Rakoczy <krakoczy@antmicro.com>
+Date: Mon, 10 Jan 2022 13:19:38 +0100
+Subject: [PATCH 4/4] Always look for variables for nosync
+
+Signed-off-by: Kamil Rakoczy <krakoczy@antmicro.com>
+---
+ frontends/ast/simplify.cc | 15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
+
+diff --git a/frontends/ast/simplify.cc b/frontends/ast/simplify.cc
+index 2cef569a8..374f38555 100644
+--- a/frontends/ast/simplify.cc
++++ b/frontends/ast/simplify.cc
+@@ -2370,15 +2370,12 @@ bool AstNode::simplify(bool const_fold, bool at_zero, bool in_lvalue, int stage,
+ 	{
+ 		expand_genblock(str + ".");
  
--        // TODO(zachjs): support access to whole sub-structs and unions
--        // `CHECK(s.x, 2, 0)
--        // `CHECK(s.y, 2, 1)
-+        `CHECK(s.x, 2, 0)
-+        `CHECK(s.y, 2, 1)
+-		// if this is an autonamed block is in an always_comb
+-		if (current_always && current_always->attributes.count(ID::always_comb)
+-				&& str.at(0) == '$')
+-			// track local variables in this block so we can consider adding
+-			// nosync once the block has been fully elaborated
+-			for (AstNode *child : children)
+-				if (child->type == AST_WIRE &&
+-						!child->attributes.count(ID::nosync))
+-					mark_auto_nosync(this, child);
++		// track local variables in this block so we can consider adding
++		// nosync once the block has been fully elaborated
++		for (AstNode *child : children)
++			if (child->type == AST_WIRE &&
++					!child->attributes.count(ID::nosync))
++				mark_auto_nosync(this, child);
  
-         assert (fail === 0);
-     end
+ 		std::vector<AstNode*> new_children;
+ 		for (size_t i = 0; i < children.size(); i++)
+-- 
+2.33.1
+
