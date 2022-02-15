@@ -1,28 +1,19 @@
-From 0b8a1022316dc2af1a2835cddd5de00a9cd900b8 Mon Sep 17 00:00:00 2001
+From 413d3802d3b3da6df934f6fd2dfe83c9f16abda8 Mon Sep 17 00:00:00 2001
 From: Kamil Rakoczy <krakoczy@antmicro.com>
-Date: Mon, 23 Aug 2021 13:30:45 +0200
-Subject: [PATCH] ibex: change ram_2p to ram_1p
+Date: Tue, 15 Feb 2022 10:46:54 +0100
+Subject: [PATCH 2/2] ibex: change ram_2p to ram_1p
 
 Signed-off-by: Kamil Rakoczy <krakoczy@antmicro.com>
 ---
- examples/fpga/artya7/rtl/top_artya7.sv | 46 +++++++++++++++-----------
+ examples/fpga/artya7/rtl/top_artya7.sv | 44 +++++++++++++++-----------
  shared/fpga_xilinx.core                |  4 +--
- 2 files changed, 28 insertions(+), 22 deletions(-)
+ 2 files changed, 27 insertions(+), 21 deletions(-)
 
 diff --git a/examples/fpga/artya7/rtl/top_artya7.sv b/examples/fpga/artya7/rtl/top_artya7.sv
-index 096125e3..c8f0c7ae 100644
+index b15ee978..7ed562bb 100644
 --- a/examples/fpga/artya7/rtl/top_artya7.sv
 +++ b/examples/fpga/artya7/rtl/top_artya7.sv
-@@ -8,7 +8,7 @@ module top_artya7 (
-     output [3:0]        LED
- );
- 
--  parameter int          MEM_SIZE     = 256 * 1024; // 256 kB
-+  parameter int          MEM_SIZE     = 32 * 1024; // 32 kB
-   parameter logic [31:0] MEM_START    = 32'h00000000;
-   parameter logic [31:0] MEM_MASK     = MEM_SIZE-1;
-   parameter              SRAMInitFile = "";
-@@ -81,28 +81,34 @@ module top_artya7 (
+@@ -87,28 +87,34 @@ module top_artya7 (
    );
  
    // SRAM block for instruction and data storage
@@ -75,7 +66,7 @@ index 096125e3..c8f0c7ae 100644
 +    .rdata_o   ( instr_rdata    )
    );
  
- 
+   assign instr_gnt = instr_req;
 diff --git a/shared/fpga_xilinx.core b/shared/fpga_xilinx.core
 index 242f1f2d..26b05f1f 100644
 --- a/shared/fpga_xilinx.core
@@ -94,5 +85,5 @@ index 242f1f2d..26b05f1f 100644
  
  targets:
 -- 
-2.28.0
+2.33.1
 

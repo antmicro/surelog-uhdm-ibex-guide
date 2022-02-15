@@ -30,8 +30,8 @@ Clone, build and install Surelog
 
 .. code-block:: bash
 
-   git clone https://github.com/alainmarcel/Surelog --recurse-submodules
-   cd Surelog && git checkout 06e08f98b6bdbf4b319ce6df0a65cc171168b7a4 --recurse-submodules
+   git clone https://github.com/chipsalliance/Surelog --recurse-submodules
+   cd Surelog && git checkout bf19da37874169891b928419a721176219222f68 --recurse-submodules
    pip3 install orderedmultidict
    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$PREFIX -DCMAKE_POSITION_INDEPENDENT_CODE=ON -S . -B build
    cmake --build build -j $(nproc)
@@ -44,7 +44,7 @@ Clone, build and install Yosys
 .. code-block:: bash
 
    git clone https://github.com/yosyshq/yosys
-   cd yosys && git checkout 61324cf55fc5c5237161d4cee157c121fe115fa1 
+   cd yosys && git checkout 426f89fc6f8c3aecfbbe22020ad79275071f9314
    make -j$(nproc) install
    cd -
 
@@ -54,7 +54,7 @@ Clone, build and install Yosys plugins
 .. code-block:: bash
 
    git clone https://github.com/SymbiFlow/yosys-symbiflow-plugins
-   cd yosys-symbiflow-plugins && git checkout 6ff7742749459e09e022976f65cd027bfe3d2630
+   cd yosys-symbiflow-plugins && git checkout 536c987f6b8e38f192e4c86f4468a4fd9280d7cc
    git submodule update --init --recursive
    make install -j$(nproc)
    cd -
@@ -75,7 +75,7 @@ Clone ibex
 .. code-block:: bash
 
    git clone https://github.com/lowrisc/ibex
-   cd ibex && git checkout 1bbe27effeda63f34c4f5c06cc88da58f9c5a404
+   cd ibex && git checkout bbc48a0c34342935b5bd326bb8351168d6258ec7
    cd -
 
 Build Ibex Firmware

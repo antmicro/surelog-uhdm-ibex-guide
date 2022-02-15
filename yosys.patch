@@ -1,151 +1,7 @@
-From 543231e797c2ac99df33ce63669cfd28fe370a51 Mon Sep 17 00:00:00 2001
-From: Kamil Rakoczy <krakoczy@antmicro.com>
-Date: Wed, 22 Sep 2021 12:15:49 +0200
-Subject: [PATCH 1/4] Add support for typedef with range in struct
-
-Signed-off-by: Kamil Rakoczy <krakoczy@antmicro.com>
----
- frontends/ast/simplify.cc | 26 +++++++++++++++++++++++++-
- 1 file changed, 25 insertions(+), 1 deletion(-)
-
-diff --git a/frontends/ast/simplify.cc b/frontends/ast/simplify.cc
-index 18b1e1e11..f25531e96 100644
---- a/frontends/ast/simplify.cc
-+++ b/frontends/ast/simplify.cc
-@@ -300,6 +300,21 @@ static int size_packed_struct(AstNode *snode, int base_offset)
- 	bool is_union = (snode->type == AST_UNION);
- 	int offset = 0;
- 	int packed_width = -1;
-+	// embeded struct or union with range?
-+	auto it = std::remove_if(snode->children.begin(), snode->children.end(),
-+                         [](AstNode* node) { return node->type == AST_RANGE; });
-+	std::vector<AstNode*> ranges(it, snode->children.end());
-+	snode->children.erase(it, snode->children.end());
-+	if (!ranges.empty()) {
-+		if (ranges.size() > 1) {
-+			log_file_error(ranges[1]->filename, ranges[1]->location.first_line, "Currently support for custom-type with range is limited to single range\n");
-+		}
-+		for (auto range : ranges) {
-+			snode->multirange_dimensions.push_back(min(range->range_left, range->range_right));
-+			snode->multirange_dimensions.push_back(max(range->range_left, range->range_right) - min(range->range_left, range->range_right) + 1);
-+			snode->multirange_swapped.push_back(range->range_swapped);
-+		}
-+	}
- 	// examine members from last to first
- 	for (auto it = snode->children.rbegin(); it != snode->children.rend(); ++it) {
- 		auto node = *it;
-@@ -307,6 +322,15 @@ static int size_packed_struct(AstNode *snode, int base_offset)
- 		if (node->type == AST_STRUCT || node->type == AST_UNION) {
- 			// embedded struct or union
- 			width = size_packed_struct(node, base_offset + offset);
-+			if (!node->multirange_dimensions.empty()) {
-+				int number_of_structs = 1;
-+				number_of_structs = node->multirange_dimensions.back();
-+				width *= number_of_structs;
-+			}
-+			// set range of struct
-+			node->range_right = base_offset + offset;
-+			node->range_left = base_offset + offset + width - 1;
-+			node->range_valid = true;
- 		}
- 		else {
- 			log_assert(node->type == AST_STRUCT_ITEM);
-@@ -509,7 +533,7 @@ static int get_max_offset(AstNode *node)
- 	// get the width from the MS member in the struct
- 	// as members are laid out from left to right in the packed wire
- 	log_assert(node->type==AST_STRUCT || node->type==AST_UNION);
--	while (node->type != AST_STRUCT_ITEM) {
-+	while (node->range_left < 0) {
- 		node = node->children[0];
- 	}
- 	return node->range_left;
--- 
-2.33.1
-
-From d2e26aceb4a6923a340fca85bfaba5a18a88fd9d Mon Sep 17 00:00:00 2001
-From: Kamil Rakoczy <krakoczy@antmicro.com>
-Date: Mon, 22 Nov 2021 15:02:27 +0100
-Subject: [PATCH 2/4] Add support for accessing whole struct
-
-Signed-off-by: Kamil Rakoczy <krakoczy@antmicro.com>
----
- frontends/ast/genrtlil.cc |  4 +++-
- frontends/ast/simplify.cc | 15 ++++++++++-----
- 2 files changed, 13 insertions(+), 6 deletions(-)
-
-diff --git a/frontends/ast/genrtlil.cc b/frontends/ast/genrtlil.cc
-index 4c25287ad..53bf43cba 100644
---- a/frontends/ast/genrtlil.cc
-+++ b/frontends/ast/genrtlil.cc
-@@ -849,6 +849,8 @@ void AstNode::detectSignWidthWorker(int &width_hint, bool &sign_hint, bool *foun
- 				while (id_ast->simplify(true, false, false, 1, -1, false, true)) { }
- 			if (id_ast->children[0]->type == AST_CONSTANT)
- 				this_width = id_ast->children[0]->bits.size();
-+			else if (id_ast->children.size() == 1 && id_ast->children[0]->type == AST_IDENTIFIER && id_ast->children[0]->id2ast)
-+				this_width = id_ast->children[0]->id2ast->range_left - id_ast->children[0]->id2ast->range_right + 1;
- 			else
- 				log_file_error(filename, location.first_line, "Failed to detect width for parameter %s!\n", str.c_str());
- 			if (children.size() != 0)
-@@ -877,7 +879,7 @@ void AstNode::detectSignWidthWorker(int &width_hint, bool &sign_hint, bool *foun
- 			this_width = id_ast->children[0]->range_left - id_ast->children[0]->range_right + 1;
- 			if (children.size() > 1)
- 				range = children[1];
--		} else if (id_ast->type == AST_STRUCT_ITEM) {
-+		} else if (id_ast->type == AST_STRUCT_ITEM || id_ast->type == AST_STRUCT) {
- 			AstNode *tmp_range = make_struct_member_range(this, id_ast);
- 			this_width = tmp_range->range_left - tmp_range->range_right + 1;
- 			delete tmp_range;
-diff --git a/frontends/ast/simplify.cc b/frontends/ast/simplify.cc
-index f25531e96..2cef569a8 100644
---- a/frontends/ast/simplify.cc
-+++ b/frontends/ast/simplify.cc
-@@ -517,14 +517,12 @@ static void add_members_to_scope(AstNode *snode, std::string name)
- 	// in case later referenced in assignments
- 	log_assert(snode->type==AST_STRUCT || snode->type==AST_UNION);
- 	for (auto *node : snode->children) {
-+		auto member_name = name + "." + node->str;
-+		current_scope[member_name] = node;
- 		if (node->type != AST_STRUCT_ITEM) {
- 			// embedded struct or union
- 			add_members_to_scope(node, name + "." + node->str);
- 		}
--		else {
--			auto member_name = name + "." + node->str;
--			current_scope[member_name] = node;
--		}
- 	}
- }
- 
-@@ -1365,6 +1363,13 @@ bool AstNode::simplify(bool const_fold, bool at_zero, bool in_lvalue, int stage,
- 
- 	case AST_PARAMETER:
- 	case AST_LOCALPARAM:
-+		if (children[0]->type == AST_IDENTIFIER && current_scope.count(children[0]->str) > 0) {
-+			auto item_node = current_scope[children[0]->str];
-+			if (item_node->type == AST_STRUCT || item_node->type == AST_UNION) {
-+				attributes[ID::wiretype] = item_node->clone();
-+				add_members_to_scope(attributes[ID::wiretype], str);
-+			}
-+		}
- 		while (!children[0]->basic_prep && children[0]->simplify(false, false, false, stage, -1, false, true) == true)
- 			did_something = true;
- 		children[0]->detectSignWidth(width_hint, sign_hint);
-@@ -2042,7 +2047,7 @@ bool AstNode::simplify(bool const_fold, bool at_zero, bool in_lvalue, int stage,
- 		if (name_has_dot(str, sname)) {
- 			if (current_scope.count(str) > 0) {
- 				auto item_node = current_scope[str];
--				if (item_node->type == AST_STRUCT_ITEM) {
-+				if (item_node->type == AST_STRUCT_ITEM || item_node->type == AST_STRUCT) {
- 					// structure member, rewrite this node to reference the packed struct wire
- 					auto range = make_struct_member_range(this, item_node);
- 					newNode = new AstNode(AST_IDENTIFIER, range);
--- 
-2.33.1
-
-From 071a837160255004e8e215203e64a8a8663ec8c1 Mon Sep 17 00:00:00 2001
+From 2c5f32007835592af41a03fda910d0875e04f598 Mon Sep 17 00:00:00 2001
 From: Kamil Rakoczy <krakoczy@antmicro.com>
 Date: Mon, 10 Jan 2022 13:18:31 +0100
-Subject: [PATCH 3/4] Add always_comb_nolatch_5 test
+Subject: [PATCH 1/2] Add always_comb_nolatch_5 test
 
 Signed-off-by: Kamil Rakoczy <krakoczy@antmicro.com>
 ---
@@ -184,10 +40,10 @@ index 000000000..d9b3b4eae
 -- 
 2.33.1
 
-From b856bb9a3cc8887677dd74c0c837f09cefe76f5e Mon Sep 17 00:00:00 2001
+From 77fb96b368af807a0ab4dd249a57333680654b48 Mon Sep 17 00:00:00 2001
 From: Kamil Rakoczy <krakoczy@antmicro.com>
 Date: Mon, 10 Jan 2022 13:19:38 +0100
-Subject: [PATCH 4/4] Always look for variables for nosync
+Subject: [PATCH 2/2] Always look for variables for nosync
 
 Signed-off-by: Kamil Rakoczy <krakoczy@antmicro.com>
 ---
@@ -195,10 +51,10 @@ Signed-off-by: Kamil Rakoczy <krakoczy@antmicro.com>
  1 file changed, 6 insertions(+), 9 deletions(-)
 
 diff --git a/frontends/ast/simplify.cc b/frontends/ast/simplify.cc
-index 2cef569a8..374f38555 100644
+index 18b1e1e11..653c64e65 100644
 --- a/frontends/ast/simplify.cc
 +++ b/frontends/ast/simplify.cc
-@@ -2370,15 +2370,12 @@ bool AstNode::simplify(bool const_fold, bool at_zero, bool in_lvalue, int stage,
+@@ -2341,15 +2341,12 @@ bool AstNode::simplify(bool const_fold, bool at_zero, bool in_lvalue, int stage,
  	{
  		expand_genblock(str + ".");
  
