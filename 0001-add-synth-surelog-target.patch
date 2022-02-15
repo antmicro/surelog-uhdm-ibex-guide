@@ -1,14 +1,14 @@
-From 2be6716aabddbb5dca98ccbd09fc8c50f243285c Mon Sep 17 00:00:00 2001
+From b265acfbf9ecfc7ca51086d7ff6c509022f4edc0 Mon Sep 17 00:00:00 2001
 From: Karol Gugala <kgugala@antmicro.com>
 Date: Tue, 17 Aug 2021 17:20:26 +0200
-Subject: [PATCH] add synth surelog target
+Subject: [PATCH 1/2] add synth surelog target
 
 ---
  examples/fpga/artya7/top_artya7.core | 21 ++++++++++++++++++---
  1 file changed, 18 insertions(+), 3 deletions(-)
 
 diff --git a/examples/fpga/artya7/top_artya7.core b/examples/fpga/artya7/top_artya7.core
-index 4493a8ae..c1dc0c1e 100644
+index 4493a8ae..99a68743 100644
 --- a/examples/fpga/artya7/top_artya7.core
 +++ b/examples/fpga/artya7/top_artya7.core
 @@ -2,7 +2,7 @@ CAPI=2:
@@ -44,19 +44,19 @@ index 4493a8ae..c1dc0c1e 100644
 +        synth: "yosys"
 +        yosys_synth_options: ['-iopad', '-family xc7', '-run :check', "frontend=surelog"]
 +        yosys_read_options: ['-noassert']
-+        surelog_options: ['--disable-feature=parametersubstitution', '-DSYNTHESIS']
++        surelog_options: ['-DSYNTHESIS']
 +      yosys:
 +        arch: "xilinx"
 +        yosys_synth_options: ['-iopad', '-family xc7', '-run :check', "frontend=surelog"]
 +        yosys_read_options: ['-noassert']
-+        surelog_options: ['--disable-feature=parametersubstitution', '-DSYNTHESIS']
++        surelog_options: ['-DSYNTHESIS']
 +      symbiflow:
 +        package: "csg324-1"
 +        part: "xc7a35t"
 +        pnr: "vtr"
 +        vendor: "xilinx"
 +        yosys_read_options: ['-noassert']
-+        surelog_options: ['--disable-feature=parametersubstitution', '-DSYNTHESIS']
++        surelog_options: ['-DSYNTHESIS']
 -- 
-2.31.0
+2.33.1
 
