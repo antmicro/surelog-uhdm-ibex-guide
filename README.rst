@@ -44,7 +44,7 @@ Clone, build and install Yosys
 .. code-block:: bash
 
    git clone https://github.com/yosyshq/yosys
-   cd yosys && git checkout 426f89fc6f8c3aecfbbe22020ad79275071f9314
+   cd yosys && git checkout 4da3f2878bb873726c6ac9233fe937d8c788993c
    make -j$(nproc) install
    cd -
 
@@ -140,19 +140,3 @@ Before running the command bellow ensure Vivado accessible in your PATH.
    --SRAMInitFile="$(realpath ibex/examples/sw/led/led.vmem)"
 
 The resulting bitstream file will be located in the ``build/lowrisc_ibex_top_artya7_surelog_0.1/synth-vivado/lowrisc_ibex_top_artya7_surelog_0.1.bit`` file
-
-Enable additional features
---------------------------
-
-Some uhdm-plugin features require a modified version of Yosys. To use them, apply ``yosys.patch`` to the Yosys repository and rebuild ``yosys-symbiflow-plugins``.
-
-Specify or replace ``$PATCH_DIR`` with the path to where this repository was checked out.
-
-.. code-block:: bash
-   :name: yosys-patch
-
-   cd yosys && git apply $PATCH_DIR/yosys.patch
-   make -j$(nproc) install
-   cd -
-   cd yosys-symbiflow-plugins && make clean && make install -j$(nproc)
-   cd -

@@ -17,7 +17,5 @@ jobs:
       run: pip install --user git+https://github.com/antmicro/tuttest
     - name: Set git user for git-am
       run: git config --global user.name "GHA runner"
-    - name: Build Ibex using vanilla Yosys
+    - name: Build Ibex using Yosys with systemverilog plugin
       run: .github/test.py --first-run --build
-    - name: Build Ibex using patched Yosys
-      run: .github/test.py --patch --build

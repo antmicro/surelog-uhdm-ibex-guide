@@ -8,7 +8,6 @@ import tuttest
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--first-run', action='store_true')
-parser.add_argument('--patch', action='store_true')
 parser.add_argument('--build', action='store_true')
 args = parser.parse_args()
 
@@ -25,7 +24,6 @@ install_paths = snippets['install-paths'].text
 virtualenv = snippets['virtualenv'].text
 lowrisc_toolchain = snippets['lowrisc-toolchain'].text
 # Remove these from the collection; their use depends on env/args
-yosys_patch = snippets.pop('yosys-patch').text
 ibex_build = snippets.pop('ibex-build').text
 vivado_ibex_build = snippets.pop('vivado-ibex-build').text
 
@@ -35,9 +33,6 @@ if args.first_run:
 else:
     # Only install and set up paths
     cmd = install_paths
-
-if args.patch:
-    cmd += '\n\n' + yosys_patch
 
 if args.build:
     if not args.first_run:  # Set up the lowRISC toolchain
